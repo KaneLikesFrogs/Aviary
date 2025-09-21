@@ -40,7 +40,6 @@ class Bird: #introudced class as many of the same parameters were being parsed a
         except:
             self.Wingspan = 0
         
-        self.Data = Data #above data tends to be parsed around a lot more. Still may want to access the actual data itself though for more niche purposes
         self.ImgUrls = []
         try:
             for x in Data['images']:
@@ -48,11 +47,7 @@ class Bird: #introudced class as many of the same parameters were being parsed a
         except:
             pass
         self.Audio = []
-        try:
-            for x in Data['recordings']:
-                self.Audio.append(x)
-        except:
-            pass
+
         
     def add_to_list(self):
         headers = {
@@ -73,37 +68,28 @@ class Bird: #introudced class as many of the same parameters were being parsed a
             return(False)    
 
     def get_sounds(self):
+        headers = {
+        'accept': 'application/json',
+        'API-Key': f'{ApiKey}'
+        }
+        Response = requests.get(f'{url}/birds/{self.ID}',headers=headers)
+        SoundData = Response.json()
         try:
-            for x in self.Audio:
-                Link = x['file']
-                Remark = x['rmk']
-                if Remark == "":
-                    print(f'{Link}')
-                else:
-                    print(f'{Link} : {Remark}')
-        except: #sometimes birds do not have all data (so no audio available)
-            headers = {
-            'accept': 'application/json',
-            'API-Key': f'{ApiKey}'
-            }
-            Response = requests.get(f'{url}/birds/{self.ID}',headers=headers)
-            SoundData = Response.json()
-            try:
-                Audio = SoundData['recordings']
-                self.Audio = Audio #redefines audio if none is found
-                if len(Audio) == 0:
-                    print("No audio found")
-                    pass
-                else:
-                    for x in Audio:
-                        Link = x['file']
-                        Remark = x['rmk']
-                        if Remark == "":
-                            print(f'{Link}')
-                        else:
-                            print(f'{Link} : {Remark}')
-            except:
+            Audio = SoundData['recordings']
+            self.Audio = Audio #redefines audio if none is found
+            if len(Audio) == 0:
                 print("No audio found")
+                pass
+            else:
+                for x in Audio:
+                    Link = x['file']
+                    Remark = x['type']
+                    if Remark == "":
+                        print(f'{Link}')
+                    else:
+                        print(f'{Link} : {Remark}')
+        except:
+            print("No audio found")
     
     def get_images(self):
         #print(self.ImgUrls)
@@ -276,7 +262,7 @@ def get_bird_of_the_day(CommonName = "",Family = "",Order = ""):
     else:
         get_bird(CommonName=CommonName,Family=Family,Order=Order,New=True)
 
-def get_stats(startdate="",enddate=""): #need to fix figure layout
+def get_stats(startdate="",enddate="",OrderFilter = ""): #need to fix figure layout
     #This function scrapes the list for info based of order, wingspan and length
 
     headers = {
@@ -293,7 +279,7 @@ def get_stats(startdate="",enddate=""): #need to fix figure layout
     Pages = math.ceil((Data['total']/100))
     DescList = []
     DateList = []
-    FamilyList = []
+    OrderList = []
     LengthList = []
     WingspanList = []
 
@@ -310,54 +296,69 @@ def get_stats(startdate="",enddate=""): #need to fix figure layout
                 DescList.append(y['description'])
                 DateList.append(y['date-time'])
     
-    for x in DescList:
-        item = x.split(',')
-        FamilyList.append(item[1])
-        if item[2] == '0':
-            #print("skipping zero (LENGTH)")
-            pass
-        else:
-            LengthList.append(float(item[2]))
-        if item[3] == '0':
-            #print("skipping zero (WING)")
-            pass
-        else:
-            WingspanList.append(float(item[3]))
 
-    FamilyData = collections.Counter(FamilyList)
+    if OrderFilter == "":
+        for x in DescList:
+            item = x.split(',')
+            OrderList.append(item[1])
+            if item[2] == '0':
+                pass
+            else:
+                LengthList.append(float(item[2]))
+            if item[3] == '0':
+                pass
+            else:
+                WingspanList.append(float(item[3]))
+    else:
+        for x in DescList:
+            item = x.split(',')
+            if item[1] != OrderFilter:
+                continue
+            OrderList.append(item[1])
+            print(item)
+            if item[2] == '0':
+                pass
+            else:
+                LengthList.append(float(item[2]))
+            if item[3] == '0':
+                pass
+            else:
+                WingspanList.append(float(item[3]))
+    OrderData = collections.Counter(OrderList)
     Labels = []
     PieData = []
     
-    for x in FamilyData:
-        PieData.append(FamilyData[x])
+    for x in OrderData:
+        PieData.append(OrderData[x])
         Labels.append(x)
     
     WingData = np.array(WingspanList)
     LengthData = np.array(LengthList)
     PieData = np.array(PieData)
-    #print(WingData)
-    #print(LengthData)
-    plt.subplot(3,1,1)
+    if OrderFilter == "":
+        GraphCount = 3
+    else:
+        GraphCount = 2
+    plt.subplot(GraphCount,1,1)
     plt.hist(WingData,label="Wing Span Historgram",color='skyblue')
-    plt.title("Wing Span Historgram")
+    plt.title(f"{OrderFilter} Wing Span Historgram")
     plt.ylabel('Occurences')
     plt.xlabel('Wingspan (cm)')
-    plt.subplot(3,1,2)
+    plt.subplot(GraphCount,1,2)
     plt.hist(LengthData,label="Length Histogram",color = 'forestgreen')
     plt.ylabel('Occurences')
     plt.xlabel('Length (cm)')
-    plt.title("Length Historgram")
-    plt.subplot(3,1,3)
-    plt.pie(PieData,labels=Labels)
-    plt.title("Occurences of Orders Pie Chart")
+    plt.title(f"{OrderFilter} Length Historgram")
+    if OrderFilter == "":
+        plt.subplot(3,1,3)
+        plt.pie(PieData,labels=Labels)
+        plt.title("Occurences of Orders Pie Chart")
     plt.tight_layout(pad=0.1)
     plt.show()
-    #print(DescList)
-    #print(DateList)
 
 def add_unq_bird(Name,Order,Length=0,Wingspan=0): #if a bird not present in database can instead add it to the lsit (for purpose of stats)
     
-    IDList,FamilyList = get_list()
+    IDList,OrderList = get_list()
     IntID = list(map(int,IDList))
     Lowest = min((min(IntID)),-1) 
     
@@ -380,3 +381,4 @@ def add_unq_bird(Name,Order,Length=0,Wingspan=0): #if a bird not present in data
     else:
         return(False)
 
+get_stats(OrderFilter="Passeriformes")
