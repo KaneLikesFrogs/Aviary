@@ -47,8 +47,7 @@ class Bird: #introudced class as many of the same parameters were being parsed a
         except:
             pass
         self.Audio = []
-
-        
+  
     def add_to_list(self):
         headers = {
          'accept': 'application/json',
@@ -92,14 +91,16 @@ class Bird: #introudced class as many of the same parameters were being parsed a
             print("No audio found")
     
     def get_images(self):
-        #print(self.ImgUrls)
+        print(self.ImgUrls)
         if len(self.ImgUrls) == 0:
             print("No images found")
+        count = 0
         for x in self.ImgUrls:
-            count =+ 1
-            urllib.request.urlretrieve(x,f"BOTD{count}.jpg")
-            img = Image.open(f"BOTD{count}.jpg")
-            img.show()
+            count += 1
+            urllib.request.urlretrieve(x,f"BOTD{count}.png")
+            #print(f"BOTD{count}.png")
+            img = Image.open(f"BOTD{count}.png")
+            #img.show()
 
     def info_string(self):
         RegList = ":"
@@ -113,11 +114,11 @@ class Bird: #introudced class as many of the same parameters were being parsed a
         if self.Wingspan == 0 and self.Length == 0:
             return(OutputStr)
         if self.Wingspan == 0 and self.Length != 0:
-            return(OutputStr + f'The {self.Name} has an average length of {self.Length}')
+            return(OutputStr + f'The {self.Name} has an average length of {self.Length}cm')
         if self.Wingspan != 0 and self.Length == 0:
-            return(OutputStr + f'The {self.Name} has an average wingpsan of {self.Wingspan}')
+            return(OutputStr + f'The {self.Name} has an average wingpsan of {self.Wingspan}cm')
         if self.Wingspan != 0 and self.Length != 0:
-            return(OutputStr + f'The {self.Name} has an average wingpsan of {self.Wingspan} and length of {self.Length} for a Wingspan:Length ratio of {round(self.Wingspan/self.Length,2)}')
+            return(OutputStr + f'The {self.Name} has an average wingpsan of {self.Wingspan}cm and length of {self.Length}cm for a Wingspan:Length ratio of {round(self.Wingspan/self.Length,2)}')
 
 def create_list(ListName): #need to refine this more but do not want to hit list limit
     headers = {
@@ -381,4 +382,5 @@ def add_unq_bird(Name,Order,Length=0,Wingspan=0): #if a bird not present in data
     else:
         return(False)
 
-get_stats(OrderFilter="Passeriformes")
+get_bird_of_the_day()
+#get_stats()
